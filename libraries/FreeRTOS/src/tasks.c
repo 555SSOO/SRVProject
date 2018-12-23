@@ -339,7 +339,7 @@ typedef struct TaskControlBlock_t
     #if( configUSE_POSIX_ERRNO == 1 )
         int iTaskErrno;
     #endif
-
+    TickType_t uxDeadline; // SServer
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -554,7 +554,8 @@ static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     UBaseType_t uxPriority,
                                     TaskHandle_t * const pxCreatedTask,
                                     TCB_t *pxNewTCB,
-                                    const MemoryRegion_t * const xRegions ) PRIVILEGED_FUNCTION;
+                                    const MemoryRegion_t * const xRegions,
+                                    TickType_t uxDeadline ) PRIVILEGED_FUNCTION; // SServer
 
 /*
  * Called after a new task has been created and initialised to place the task
@@ -583,7 +584,8 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
-                                    StaticTask_t * const pxTaskBuffer )
+                                    StaticTask_t * const pxTaskBuffer,
+                                    TickType_t uxDeadline )
     {
     TCB_t *pxNewTCB;
     TaskHandle_t xReturn;
@@ -618,7 +620,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
             }
             #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL );
+            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, uxDeadline );
             prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
@@ -827,7 +829,8 @@ static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     UBaseType_t uxPriority,
                                     TaskHandle_t * const pxCreatedTask,
                                     TCB_t *pxNewTCB,
-                                    const MemoryRegion_t * const xRegions )
+                                    const MemoryRegion_t * const xRegions,
+                                    TickType_t uxDeadline )
 {
 StackType_t *pxTopOfStack;
 UBaseType_t x;
@@ -923,6 +926,7 @@ UBaseType_t x;
     }
 
     pxNewTCB->uxPriority = uxPriority;
+    pxNewTCB->uxDeadline = uxDeadline; // SServer
     #if ( configUSE_MUTEXES == 1 )
     {
         pxNewTCB->uxBasePriority = uxPriority;
@@ -1941,7 +1945,8 @@ BaseType_t xReturn;
                                                 ( void * ) NULL, /*lint !e961.  The cast is not redundant for all compilers. */
                                                 portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
                                                 pxIdleTaskStackBuffer,
-                                                pxIdleTaskTCBBuffer ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+                                                pxIdleTaskTCBBuffer,  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+                                                portMAX_DELAY ); // SServer
 
         if( xIdleTaskHandle != NULL )
         {
@@ -2885,6 +2890,11 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 void vTaskSwitchContext( void )
 {
+
+    int i, j, list_len;
+    TCB_t* iterator;
+    TickType_t min_deadline;
+
     if( uxSchedulerSuspended != ( UBaseType_t ) pdFALSE )
     {
         /* The scheduler is currently suspended - do not allow a context
@@ -2936,9 +2946,31 @@ void vTaskSwitchContext( void )
         }
         #endif
 
+        // SServer
+
+
+        min_deadline = portMAX_DELAY;
+        for (i=0; i<configMAX_PRIORITIES; i++){ //prolazimo kroz sve liste
+           
+           list_len = listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[i]));              
+
+           for(j=0; j<list_len; j++){
+
+               listGET_OWNER_OF_NEXT_ENTRY(iterator, & (pxReadyTasksLists[i]));
+              
+               if (iterator->uxDeadline < min_deadline){
+                   min_deadline = iterator->uxDeadline;
+                   pxCurrentTCB = iterator;
+                }
+                   
+            }
+               
+        }
+
+
         /* Select a new task to run using either the generic C or port
         optimised asm code. */
-        taskSELECT_HIGHEST_PRIORITY_TASK(); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+        //taskSELECT_HIGHEST_PRIORITY_TASK(); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
         traceTASK_SWITCHED_IN();
 
         /* After the new task is switched in, update the global errno. */

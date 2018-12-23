@@ -1,5 +1,7 @@
 package frames;
 
+import arduinocomm.ArduinoCommunication;
+import jssc.SerialPortException;
 import util.Constants;
 
 import javax.swing.*;
@@ -7,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Integer.max;
+import static util.MessageFormator.sendBatchTaskMessage;
 
 class BatchTasksSetupFrame extends JFrame {
 
@@ -89,6 +92,10 @@ class BatchTasksSetupFrame extends JFrame {
             for (int i = 0; i < aperiodic_task_durations_input.size();i++){
                 aperiodic_task_durations.add(i, (Integer)aperiodic_task_durations_input.get(i).getValue());
             }
+            setVisible(false); // Hide this frame
+            dispose(); // End this frame
+
+            sendBatchTaskMessage(periodic_task_durations,periodic_task_periods,aperiodic_task_durations);
 
             new OverviewFrame(periodic_task_durations,periodic_task_periods,aperiodic_task_durations);
 

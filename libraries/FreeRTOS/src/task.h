@@ -441,7 +441,8 @@ is used in assert() statements. */
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
-                                    StaticTask_t * const pxTaskBuffer ) PRIVILEGED_FUNCTION;
+                                    StaticTask_t * const pxTaskBuffer,
+                                    TickType_t uxDeadline ) PRIVILEGED_FUNCTION; // SServer
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
