@@ -47,7 +47,8 @@ void setup() {
                     (void*)&LED_PINS[2],
                     2,
                     task1Stack, //stek za task - obavezan - treba da bude niz velicine kao treci parametar
-                    &task1Handle); //handle je obavezan
+                    &task1Handle,
+                    20); //handle je obavezan
           parseBatchModeInput();
           break;
         // Start periodic task

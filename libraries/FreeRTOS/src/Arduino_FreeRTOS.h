@@ -1043,7 +1043,9 @@ typedef struct xSTATIC_TCB
     #if ( configUSE_POSIX_ERRNO == 1 )
         int             iDummy22;
     #endif
-    TickType_t          uxDummy23; // SServer
+    TickType_t          uxDummy23; // SServer uxDeadline(period)
+    TickType_t          uxDummy24; // SServer uxDuration
+    int                 iDummy25; // SServer isPeriodic
 } StaticTask_t;
 
 /*

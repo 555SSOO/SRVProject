@@ -244,7 +244,9 @@ BaseType_t xReturn = pdFAIL;
                                                     ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
                                                     pxTimerTaskStackBuffer,
                                                     pxTimerTaskTCBBuffer,
-                                                    portMAX_DELAY ); // SServer
+                                                    portMAX_DELAY,
+                                                    portMAX_DELAY,
+                                                    0 ); // SServer
 
             if( xTimerTaskHandle != NULL )
             {

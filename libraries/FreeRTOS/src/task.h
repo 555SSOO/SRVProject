@@ -442,7 +442,9 @@ is used in assert() statements. */
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
                                     StaticTask_t * const pxTaskBuffer,
-                                    TickType_t uxDeadline ) PRIVILEGED_FUNCTION; // SServer
+                                    TickType_t uxDeadline,
+                                    TickType_t uxDuration,
+                                    int iisPeriodic ) PRIVILEGED_FUNCTION; // SServer
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**

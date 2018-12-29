@@ -340,6 +340,8 @@ typedef struct TaskControlBlock_t
         int iTaskErrno;
     #endif
     TickType_t uxDeadline; // SServer
+    TickType_t uxDuration;
+    int iisPeriodic;
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -555,7 +557,9 @@ static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     TaskHandle_t * const pxCreatedTask,
                                     TCB_t *pxNewTCB,
                                     const MemoryRegion_t * const xRegions,
-                                    TickType_t uxDeadline ) PRIVILEGED_FUNCTION; // SServer
+                                    TickType_t uxDeadline,
+                                    TickType_t uxDuration,
+                                    int iisPeriodic ) PRIVILEGED_FUNCTION; // SServer
 
 /*
  * Called after a new task has been created and initialised to place the task
@@ -585,7 +589,9 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
                                     StaticTask_t * const pxTaskBuffer,
-                                    TickType_t uxDeadline )
+                                    TickType_t uxDeadline,
+                                    TickType_t uxDuration,
+                                    int iisPeriodic ) // SServer
     {
     TCB_t *pxNewTCB;
     TaskHandle_t xReturn;
@@ -620,7 +626,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
             }
             #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, uxDeadline );
+            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, uxDeadline, uxDuration, iisPeriodic ); // SServer
             prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
@@ -830,7 +836,9 @@ static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     TaskHandle_t * const pxCreatedTask,
                                     TCB_t *pxNewTCB,
                                     const MemoryRegion_t * const xRegions,
-                                    TickType_t uxDeadline )
+                                    TickType_t uxDeadline,
+                                    TickType_t uxDuration,
+                                    int iisPeriodic ) // SServer
 {
 StackType_t *pxTopOfStack;
 UBaseType_t x;
@@ -927,6 +935,8 @@ UBaseType_t x;
 
     pxNewTCB->uxPriority = uxPriority;
     pxNewTCB->uxDeadline = uxDeadline; // SServer
+    pxNewTCB->uxDuration = uxDuration; // SServer
+    pxNewTCB->iisPeriodic = iisPeriodic; // SServer
     #if ( configUSE_MUTEXES == 1 )
     {
         pxNewTCB->uxBasePriority = uxPriority;
@@ -1946,7 +1956,9 @@ BaseType_t xReturn;
                                                 portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
                                                 pxIdleTaskStackBuffer,
                                                 pxIdleTaskTCBBuffer,  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
-                                                portMAX_DELAY ); // SServer
+                                                portMAX_DELAY,
+                                                portMAX_DELAY,
+                                                0 ); // SServer
 
         if( xIdleTaskHandle != NULL )
         {
@@ -2958,7 +2970,7 @@ void vTaskSwitchContext( void )
 
                listGET_OWNER_OF_NEXT_ENTRY(iterator, & (pxReadyTasksLists[i]));
               
-               if (iterator->uxDeadline < min_deadline){
+               if (iterator->uxDeadline <= min_deadline){
                    min_deadline = iterator->uxDeadline;
                    pxCurrentTCB = iterator;
                 }
