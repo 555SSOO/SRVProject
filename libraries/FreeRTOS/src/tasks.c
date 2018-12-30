@@ -828,6 +828,18 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
 #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 /*-----------------------------------------------------------*/
 
+
+TickType_t uxServerRefreshRate = ((TickType_t)8); // SServer
+int iServerCapacity = 2;
+
+void setSporadicServerParams(TickType_t _uxServerRefreshRate, int _iServerCapacity){
+    uxServerRefreshRate = _uxServerRefreshRate;
+    iServerCapacity = _iServerCapacity;
+}
+
+/*-----------------------------------------------------------*/
+
+
 static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
                                     const configSTACK_DEPTH_TYPE ulStackDepth,
@@ -934,7 +946,12 @@ UBaseType_t x;
     }
 
     pxNewTCB->uxPriority = uxPriority;
-    pxNewTCB->uxDeadline = uxDeadline; // SServer
+    if( iisPeriodic == 1 ){
+        pxNewTCB->uxDeadline = uxDeadline; // SServer
+    }
+    else{
+        pxNewTCB->uxDeadline = uxServerRefreshRate; // SServer
+    }
     pxNewTCB->uxDuration = uxDuration; // SServer
     pxNewTCB->iisPeriodic = iisPeriodic; // SServer
     #if ( configUSE_MUTEXES == 1 )
@@ -1958,7 +1975,7 @@ BaseType_t xReturn;
                                                 pxIdleTaskTCBBuffer,  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
                                                 portMAX_DELAY,
                                                 portMAX_DELAY,
-                                                0 ); // SServer
+                                                1 ); // SServer
 
         if( xIdleTaskHandle != NULL )
         {
@@ -2962,19 +2979,27 @@ void vTaskSwitchContext( void )
 
 
         min_deadline = portMAX_DELAY;
-        for (i=0; i<configMAX_PRIORITIES; i++){ //prolazimo kroz sve liste
+        for (i=0; i<configMAX_PRIORITIES; i++){ // Go trough all the priority lists
            
-           list_len = listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[i]));              
+           list_len = listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[i])); // Get how many elements are in each list              
 
-           for(j=0; j<list_len; j++){
+           for(j=0; j<list_len; j++){ // Go trough each element in each list
 
-               listGET_OWNER_OF_NEXT_ENTRY(iterator, & (pxReadyTasksLists[i]));
-              
-               if (iterator->uxDeadline <= min_deadline){
-                   min_deadline = iterator->uxDeadline;
-                   pxCurrentTCB = iterator;
-                }
-                   
+               listGET_OWNER_OF_NEXT_ENTRY(iterator, & (pxReadyTasksLists[i])); // Get the next element in the list
+
+               // if(iterator->iisPeriodic == 1){ // If the task is periodic 
+                    if (iterator->uxDeadline <= min_deadline){
+                        min_deadline = iterator->uxDeadline;
+                        pxCurrentTCB = iterator;
+                    }
+               // }
+               // else if(iterator->iisPeriodic == 0){
+               //      if (uxServerRefreshRate <= min_deadline){ // If the task is aperiodic we check the server period
+               //          min_deadline = 8;
+               //          pxCurrentTCB = iterator;
+               //      }
+               // }
+            
             }
                
         }
