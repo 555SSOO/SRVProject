@@ -3004,6 +3004,14 @@ void vTaskSwitchContext( void )
 
 
 
+        
+        // Check if we should recover server capacity
+        if(xTickCount == xTimeToRecoverServerCapacity){
+            iServerCapacity += iPointsToRecover;
+            
+        }
+
+
         min_deadline = portMAX_DELAY;
         for (i=0; i<configMAX_PRIORITIES; i++){ // Go trough all the priority lists
            list_len = listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[i])); // Get how many elements are in each list              
@@ -3013,15 +3021,25 @@ void vTaskSwitchContext( void )
                     if (iterator->uxDeadline <= min_deadline){ // If the task has the highest priority so far
 
 
-                        if(iterator->iIsEnded == 1 && (xTickCount/iterator->uxDeadline) > iterator->iEndTimeSection){ // If the task has ended and it can start again
-                            iterator->iIsEnded = 0;
+                        if(iterator->iIsEnded == 1 && (xTickCount/iterator->uxDeadline) == iterator->iEndTimeSection){ // If the task has ended and it can't start again because of the period
+                            continue;
+                        }
+                        else{ // If we can start it again
+                            if(iterator->uxTicksDone + 1 == iterator->uxDuration){ // If this is the last tick
+                                iterator->iIsEnded = 1; // Set the flag to ended executing in this period
+                                iterator->iEndTimeSection = xTickCount / iterator->uxDeadline;
+                                iterator->uxTicksDone = 0; // Reset the execution time
+                            }
+                            else{ // If it's not the last tick
+                                iterator->iIsEnded = 0; // Set the flag to currently executing
+                                iterator->uxTicksDone++; // Increase the time it has been executing
+                            }
+                            min_deadline = iterator->uxDeadline;
+                            pxCurrentTCB = iterator;
                         }
 
 
 
-
-                        min_deadline = iterator->uxDeadline;
-                        pxCurrentTCB = iterator;
                     }
                 }
                 else if(iterator->iisPeriodic == 0){ // If the task is aperiodic 
