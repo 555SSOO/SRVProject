@@ -246,7 +246,10 @@ BaseType_t xReturn = pdFAIL;
                                                     pxTimerTaskTCBBuffer,
                                                     portMAX_DELAY,
                                                     portMAX_DELAY,
-                                                    1 ); // SServer
+                                                    1,
+                                                    0,
+                                                    0,
+                                                    0 ); // SServer
 
             if( xTimerTaskHandle != NULL )
             {

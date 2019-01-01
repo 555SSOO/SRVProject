@@ -1046,6 +1046,9 @@ typedef struct xSTATIC_TCB
     TickType_t          uxDummy23; // SServer uxDeadline(period)
     TickType_t          uxDummy24; // SServer uxDuration
     int                 iDummy25; // SServer isPeriodic
+    int                 iDummy26; // SServer isEnded
+    int                 iDummy27; // SServer endTimeSection
+    TickType_t          uxDummy28; // SServer ticksDone
 } StaticTask_t;
 
 /*

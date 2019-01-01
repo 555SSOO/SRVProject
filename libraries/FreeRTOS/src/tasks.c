@@ -69,6 +69,9 @@ functions but without including stdio.h here. */
 #define taskWAITING_NOTIFICATION        ( ( uint8_t ) 1 )
 #define taskNOTIFICATION_RECEIVED       ( ( uint8_t ) 2 )
 
+// SServer define max tasks
+#define MAX_TASKS ( ( uint8_t ) 5 )
+
 /*
  * The value used to fill the stack of a task when the task is created.  This
  * is used purely for checking the high water mark for tasks.
@@ -342,6 +345,9 @@ typedef struct TaskControlBlock_t
     TickType_t uxDeadline; // SServer
     TickType_t uxDuration;
     int iisPeriodic;
+    int iIsEnded;
+    int iEndTimeSection;
+    TickType_t uxTicksDone;
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -559,7 +565,10 @@ static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     const MemoryRegion_t * const xRegions,
                                     TickType_t uxDeadline,
                                     TickType_t uxDuration,
-                                    int iisPeriodic ) PRIVILEGED_FUNCTION; // SServer
+                                    int iisPeriodic,
+                                    int iIsEnded,
+                                    int iEndTimeSection,
+                                    TickType_t uxTicksDone ) PRIVILEGED_FUNCTION; // SServer
 
 /*
  * Called after a new task has been created and initialised to place the task
@@ -591,7 +600,10 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
                                     StaticTask_t * const pxTaskBuffer,
                                     TickType_t uxDeadline,
                                     TickType_t uxDuration,
-                                    int iisPeriodic ) // SServer
+                                    int iisPeriodic,
+                                    int iIsEnded,
+                                    int iEndTimeSection,
+                                    TickType_t uxTicksDone ) // SServer
     {
     TCB_t *pxNewTCB;
     TaskHandle_t xReturn;
@@ -626,7 +638,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
             }
             #endif /* configSUPPORT_DYNAMIC_ALLOCATION */
 
-            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, uxDeadline, uxDuration, iisPeriodic ); // SServer
+            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, uxDeadline, uxDuration, iisPeriodic, iIsEnded, iEndTimeSection, uxTicksDone ); // SServer
             prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
@@ -850,7 +862,10 @@ static void prvInitialiseNewTask(   TaskFunction_t pxTaskCode,
                                     const MemoryRegion_t * const xRegions,
                                     TickType_t uxDeadline,
                                     TickType_t uxDuration,
-                                    int iisPeriodic ) // SServer
+                                    int iisPeriodic,
+                                    int iIsEnded,
+                                    int iEndTimeSection,
+                                    TickType_t uxTicksDone ) // SServer
 {
 StackType_t *pxTopOfStack;
 UBaseType_t x;
@@ -954,6 +969,10 @@ UBaseType_t x;
     }
     pxNewTCB->uxDuration = uxDuration; // SServer
     pxNewTCB->iisPeriodic = iisPeriodic; // SServer
+    pxNewTCB->iIsEnded = iIsEnded; // SServer
+    pxNewTCB->iEndTimeSection = iEndTimeSection; // SServer
+    pxNewTCB->uxTicksDone = uxTicksDone; // SServer
+    
     #if ( configUSE_MUTEXES == 1 )
     {
         pxNewTCB->uxBasePriority = uxPriority;
@@ -1975,7 +1994,10 @@ BaseType_t xReturn;
                                                 pxIdleTaskTCBBuffer,  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
                                                 portMAX_DELAY,
                                                 portMAX_DELAY,
-                                                1 ); // SServer
+                                                1,
+                                                0,
+                                                0,
+                                                0 ); // SServer
 
         if( xIdleTaskHandle != NULL )
         {
@@ -2917,6 +2939,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 #endif /* configUSE_APPLICATION_TASK_TAG */
 /*-----------------------------------------------------------*/
 
+
 void vTaskSwitchContext( void )
 {
 
@@ -2978,32 +3001,51 @@ void vTaskSwitchContext( void )
         // SServer
 
 
+
+
+
         min_deadline = portMAX_DELAY;
         for (i=0; i<configMAX_PRIORITIES; i++){ // Go trough all the priority lists
-           
            list_len = listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[i])); // Get how many elements are in each list              
-
            for(j=0; j<list_len; j++){ // Go trough each element in each list
-
                listGET_OWNER_OF_NEXT_ENTRY(iterator, & (pxReadyTasksLists[i])); // Get the next element in the list
+                if(iterator->iisPeriodic == 1){ // If the task is periodic 
+                    if (iterator->uxDeadline <= min_deadline){ // If the task has the highest priority so far
 
-               // if(iterator->iisPeriodic == 1){ // If the task is periodic 
+
+                        if(iterator->iIsEnded == 1 && (xTickCount/iterator->uxDeadline) > iterator->iEndTimeSection){ // If the task has ended and it can start again
+                            iterator->iIsEnded = 0;
+                        }
+
+
+
+
+                        min_deadline = iterator->uxDeadline;
+                        pxCurrentTCB = iterator;
+                    }
+                }
+                else if(iterator->iisPeriodic == 0){ // If the task is aperiodic 
+                    // Reduce the server capacity by the task duration
+                    if((iServerCapacity - 1) > 0){
+                        iServerCapacity -= 1;
+                    }
+                    else { // If the capacity is negative, skip this task
+                        continue;
+                    }
                     if (iterator->uxDeadline <= min_deadline){
                         min_deadline = iterator->uxDeadline;
                         pxCurrentTCB = iterator;
                     }
-               // }
-               // else if(iterator->iisPeriodic == 0){
-               //      if (uxServerRefreshRate <= min_deadline){ // If the task is aperiodic we check the server period
-               //          min_deadline = 8;
-               //          pxCurrentTCB = iterator;
-               //      }
-               // }
-            
+                }
+        
             }
                
         }
 
+
+
+
+        
 
         /* Select a new task to run using either the generic C or port
         optimised asm code. */
