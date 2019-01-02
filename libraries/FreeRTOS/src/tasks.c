@@ -1994,7 +1994,7 @@ BaseType_t xReturn;
                                                 pxIdleTaskTCBBuffer,  /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
                                                 portMAX_DELAY,
                                                 portMAX_DELAY,
-                                                1,
+                                                3,
                                                 0,
                                                 0,
                                                 0 ); // SServer
@@ -2939,6 +2939,34 @@ BaseType_t xSwitchRequired = pdFALSE;
 #endif /* configUSE_APPLICATION_TASK_TAG */
 /*-----------------------------------------------------------*/
 
+void vTaskDeletePeriodic( TaskHandle_t xTaskToDelete ){
+
+    TCB_t *pxTCB;
+
+        taskENTER_CRITICAL();
+        {
+            pxTCB = prvGetTCBFromHandle( xTaskToDelete );
+            pxTCB->iIsEnded = 1;
+        }
+        taskEXIT_CRITICAL();
+
+        /* Force a reschedule if it is the currently running task that has just
+        been deleted. */
+        if( xSchedulerRunning != pdFALSE )
+        {
+            if( pxTCB == pxCurrentTCB )
+            {
+                configASSERT( uxSchedulerSuspended == 0 );
+                portYIELD_WITHIN_API();
+            }
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
+        }
+
+}
+
 
 void vTaskSwitchContext( void )
 {
@@ -3006,10 +3034,7 @@ void vTaskSwitchContext( void )
 
         
         // Check if we should recover server capacity
-        if(xTickCount == xTimeToRecoverServerCapacity){
-            iServerCapacity += iPointsToRecover;
-            
-        }
+
 
 
         min_deadline = portMAX_DELAY;
@@ -3017,39 +3042,30 @@ void vTaskSwitchContext( void )
            list_len = listCURRENT_LIST_LENGTH(&(pxReadyTasksLists[i])); // Get how many elements are in each list              
            for(j=0; j<list_len; j++){ // Go trough each element in each list
                listGET_OWNER_OF_NEXT_ENTRY(iterator, & (pxReadyTasksLists[i])); // Get the next element in the list
-                if(iterator->iisPeriodic == 1){ // If the task is periodic 
+                if(iterator->iisPeriodic == 1 || iterator->iisPeriodic == 3){ // If the task is periodic or if it's the loop or timer
                     if (iterator->uxDeadline <= min_deadline){ // If the task has the highest priority so far
 
 
-                        if(iterator->iIsEnded == 1 && (xTickCount/iterator->uxDeadline) == iterator->iEndTimeSection){ // If the task has ended and it can't start again because of the period
-                            continue;
-                        }
-                        else{ // If we can start it again
-                            if(iterator->uxTicksDone + 1 == iterator->uxDuration){ // If this is the last tick
-                                iterator->iIsEnded = 1; // Set the flag to ended executing in this period
-                                iterator->iEndTimeSection = xTickCount / iterator->uxDeadline;
-                                iterator->uxTicksDone = 0; // Reset the execution time
-                            }
-                            else{ // If it's not the last tick
-                                iterator->iIsEnded = 0; // Set the flag to currently executing
-                                iterator->uxTicksDone++; // Increase the time it has been executing
-                            }
+                        // if(iterator->iIsEnded == 1 && (xTickCount/iterator->uxDeadline) == iterator->iEndTimeSection){ // If the task has ended and it can't start again because of the period
+                        //     continue;
+                        // }
+                        // else{ // If we can start it again
                             min_deadline = iterator->uxDeadline;
                             pxCurrentTCB = iterator;
-                        }
+                        //}
 
 
 
                     }
                 }
                 else if(iterator->iisPeriodic == 0){ // If the task is aperiodic 
-                    // Reduce the server capacity by the task duration
-                    if((iServerCapacity - 1) > 0){
-                        iServerCapacity -= 1;
-                    }
-                    else { // If the capacity is negative, skip this task
-                        continue;
-                    }
+                    // // Reduce the server capacity by the task duration
+                    // if((iServerCapacity - 1) > 0){
+                    //     iServerCapacity -= 1;
+                    // }
+                    // else { // If the capacity is negative, skip this task
+                    //     continue;
+                    // }
                     if (iterator->uxDeadline <= min_deadline){
                         min_deadline = iterator->uxDeadline;
                         pxCurrentTCB = iterator;
@@ -3060,7 +3076,18 @@ void vTaskSwitchContext( void )
                
         }
 
-
+        // If the selected task is periodic
+        // if(pxCurrentTCB->iisPeriodic == 1){
+        //     if(iterator->uxTicksDone + 1 == iterator->uxDuration){ // If this is the last tick
+        //         iterator->iIsEnded = 1; // Set the flag to ended executing in this period
+        //         iterator->iEndTimeSection = xTickCount / iterator->uxDeadline;
+        //         iterator->uxTicksDone = 0; // Reset the execution time
+        //     }
+        //     else{ // If it's not the last tick
+        //         iterator->iIsEnded = 0; // Set the flag to currently executing
+        //         iterator->uxTicksDone++; // Increase the time it has been executing
+        //     }
+        // }
 
 
         
