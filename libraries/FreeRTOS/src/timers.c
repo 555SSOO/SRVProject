@@ -244,12 +244,12 @@ BaseType_t xReturn = pdFAIL;
                                                     ( ( UBaseType_t ) configTIMER_TASK_PRIORITY ) | portPRIVILEGE_BIT,
                                                     pxTimerTaskStackBuffer,
                                                     pxTimerTaskTCBBuffer,
-                                                    portMAX_DELAY,
-                                                    portMAX_DELAY,
-                                                    3,
-                                                    0,
-                                                    0,
-                                                    0 ); // SServer
+                                                    portMAX_DELAY, // SServer
+                                                    portMAX_DELAY, // Duration
+                                                    1,  // isPeriodic
+                                                    0,  // isEnded
+                                                    0,  // iEndTimeSection
+                                                    0); // uxTicksDone
 
             if( xTimerTaskHandle != NULL )
             {

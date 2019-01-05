@@ -446,7 +446,7 @@ is used in assert() statements. */
                                     TickType_t uxDuration,
                                     int iisPeriodic,
                                     int iIsEnded,
-                                    int iEndTimeSelection,
+                                    int iEndTimeSection,
                                     TickType_t uxTicksDone ) PRIVILEGED_FUNCTION; // SServer
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
