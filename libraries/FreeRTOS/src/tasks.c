@@ -2954,20 +2954,20 @@ void vTaskDeletePeriodic( TaskHandle_t xTaskToDelete ){
         }
         taskEXIT_CRITICAL();
 
-        // /* Force a reschedule if it is the currently running task that has just
-        // been deleted. */
-        // if( xSchedulerRunning != pdFALSE )
-        // {
-        //     if( pxTCB == pxCurrentTCB )
-        //     {
-        //         configASSERT( uxSchedulerSuspended == 0 );
-        //         portYIELD_WITHIN_API();
-        //     }
-        //     else
-        //     {
-        //         mtCOVERAGE_TEST_MARKER();
-        //     }
-        // }
+        /* Force a reschedule if it is the currently running task that has just
+        been deleted. */
+        if( xSchedulerRunning != pdFALSE )
+        {
+            if( pxTCB == pxCurrentTCB )
+            {
+                configASSERT( uxSchedulerSuspended == 0 );
+                portYIELD_WITHIN_API();
+            }
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
+        }
 
 }
 
