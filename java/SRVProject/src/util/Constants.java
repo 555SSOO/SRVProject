@@ -6,6 +6,8 @@ public class Constants {
     public static final String NUMBER_OF_APERIODIC_TASKS = "Number of aperiodic tasks:";
     public static final int MAXIMUM_NUMBER_OF_PERIODIC_TASKS = 5;
     public static final int MAXIMUM_NUMBER_OF_APERIODIC_TASKS = 5;
+    public static final int MAXIMUM_PERIOD = 50;
+    public static final int MAXIMUM_DURATION = 50;
     public static final int MAXIMUM_SERVER_PERIOD = 50;
     public static final int MAXIMUM_SERVER_CAPACITY = 50;
     public static final String PERIODIC_TASKS_INFORMATION = "Periodic tasks information:";

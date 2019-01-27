@@ -58,11 +58,11 @@ class BatchTasksSetupFrame extends JFrame {
             number_of_task_label.setBounds(20, i * 50 + 70, 200, 30);
             panel.add(number_of_task_label);
 
-            JSpinner periodic_task_info_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_PERIODIC_TASKS, 1)); // Make a new spinner for task duration selection
+            JSpinner periodic_task_info_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_DURATION, 1)); // Make a new spinner for task duration selection
             periodic_task_info_selector.setBounds(60, i * 50 + 70, 50, 30); // Set the bounds for it
             panel.add(periodic_task_info_selector); // Add it to the panel
             periodic_task_durations_input.add(periodic_task_info_selector); // Add the selector to the list
-            periodic_task_info_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_PERIODIC_TASKS, 1)); // Selector for the task period
+            periodic_task_info_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_PERIOD, 1)); // Selector for the task period
             periodic_task_info_selector.setBounds(120, i * 50 + 70, 50, 30); // Set bounds for it
             panel.add(periodic_task_info_selector); // Add it to the panel
             periodic_task_periods_input.add(periodic_task_info_selector); // Add the period information selector to the list
@@ -74,7 +74,7 @@ class BatchTasksSetupFrame extends JFrame {
             number_of_task_label.setBounds(370, i * 50 + 70, 200, 30);
             panel.add(number_of_task_label);
 
-            JSpinner aperiodic_task_info_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_APERIODIC_TASKS, 1)); // Create a selector for aperiodic task durations
+            JSpinner aperiodic_task_info_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_DURATION, 1)); // Create a selector for aperiodic task durations
             aperiodic_task_info_selector.setBounds(410, i * 50 + 70, 50, 30); // Set its bounds
             panel.add(aperiodic_task_info_selector); // Add the selector to the panel
             aperiodic_task_durations_input.add(aperiodic_task_info_selector); // Add the duration selector to the list

@@ -46,11 +46,11 @@ class OverviewFrame extends JFrame{
 
 
         // Number selectors
-        JSpinner periodic_task_duration_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_PERIODIC_TASKS, 1));
+        JSpinner periodic_task_duration_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_DURATION, 1));
         periodic_task_duration_selector.setBounds(80, 10, 50, 30);
-        JSpinner periodic_task_period_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_APERIODIC_TASKS, 1));
+        JSpinner periodic_task_period_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_PERIOD, 1));
         periodic_task_period_selector.setBounds(270, 10, 50, 30);
-        JSpinner aperiodic_task_duration_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_APERIODIC_TASKS, 1));
+        JSpinner aperiodic_task_duration_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_DURATION, 1));
         aperiodic_task_duration_selector.setBounds(80, 100, 50, 30);
         JSpinner number_of_periodic_task_selector = new JSpinner(new SpinnerNumberModel(1, 0, Constants.MAXIMUM_NUMBER_OF_APERIODIC_TASKS, 1));
         number_of_periodic_task_selector.setBounds(50, 200, 50, 30);
