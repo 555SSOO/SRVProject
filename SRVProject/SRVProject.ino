@@ -69,9 +69,8 @@ void setup() {
       break;
     }
   }
-  digitalWrite(3, HIGH);
+
   setSporadicServerParams(server_period, server_capacity);
-  digitalWrite(4, HIGH);
   attachInterrupt(digitalPinToInterrupt(BTN_PIN),btn_isr, RISING);
 
 }
@@ -483,8 +482,6 @@ void turnOnLEDa(void * pvParameters) {
 void loop() {
 
   //Serial.println("In idle");
-  digitalWrite(2, HIGH);
-
   if (Serial.available() > 0) {
     // If we are sent batch tasks
     switch (Serial.read()) {

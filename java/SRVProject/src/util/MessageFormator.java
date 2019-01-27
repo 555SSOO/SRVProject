@@ -59,6 +59,7 @@ public class MessageFormator {
         message.append(period);
         message.append(",");
         message.append(duration);
+        message.append("\n");
         System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
