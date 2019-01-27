@@ -38,11 +38,11 @@ public class PortSelectionFrame extends JFrame{
             ArduinoCommunication.setPort((String) port_selection.getSelectedItem()); // Set the port globally
             try {
                 ArduinoCommunication.connect(); // Start communication
-                ArduinoCommunication.readFromSerial();
+                //ArduinoCommunication.readFromSerial();
             } catch (SerialPortException | InterruptedException e) {
                 e.printStackTrace();
             }
-            new NumberOfTasksFrame(Constants.INITIAL_SETUP); // Create the next frame
+            new ServerSetupFrame(); // Create the next frame
         });
 
         // Adding all elements to panel

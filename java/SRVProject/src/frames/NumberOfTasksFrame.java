@@ -6,12 +6,12 @@ import javax.swing.*;
 
 class NumberOfTasksFrame extends JFrame {
 
-    NumberOfTasksFrame(String title) {
-        initUI(title);
+    NumberOfTasksFrame() {
+        initUI();
         this.setVisible(true);
     }
 
-    private void initUI(String title) {
+    private void initUI() {
 
         // Panel setup
         JPanel panel = new JPanel();
@@ -34,10 +34,16 @@ class NumberOfTasksFrame extends JFrame {
         JButton ok_button = new JButton(Constants.OK);
         ok_button.setBounds(100, 100, 200, 30);
         ok_button.addActionListener(event -> {
-            setVisible(false); // Hide this frame
-            dispose(); // End this frame
-            new BatchTasksSetupFrame((Integer) number_of_periodic_tasks_selector.getValue() // Start the task setup frame
-                    , (Integer) number_of_aperiodic_tasks_selector.getValue());
+
+            if((Integer) number_of_periodic_tasks_selector.getValue() + (Integer) number_of_aperiodic_tasks_selector.getValue() <= 5){
+                setVisible(false); // Hide this frame
+                dispose(); // End this frame
+                new BatchTasksSetupFrame((Integer) number_of_periodic_tasks_selector.getValue() // Start the task setup frame
+                        , (Integer) number_of_aperiodic_tasks_selector.getValue());
+            }
+            else {
+                JOptionPane.showMessageDialog(NumberOfTasksFrame.this, Constants.TOO_MANY_TASKS);
+            }
         });
 
         // Adding all elements to panel
@@ -48,10 +54,8 @@ class NumberOfTasksFrame extends JFrame {
         panel.add(number_of_aperiodic_tasks_label);
 
         // Window setup
-        setTitle(title);
         setSize(420, 200);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
     }
 }

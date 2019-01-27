@@ -92,12 +92,14 @@ class BatchTasksSetupFrame extends JFrame {
             for (int i = 0; i < aperiodic_task_durations_input.size();i++){
                 aperiodic_task_durations.add(i, (Integer)aperiodic_task_durations_input.get(i).getValue());
             }
-            setVisible(false); // Hide this frame
-            dispose(); // End this frame
+
 
             sendBatchTaskMessage(periodic_task_durations,periodic_task_periods,aperiodic_task_durations);
 
-            new OverviewFrame(periodic_task_durations,periodic_task_periods,aperiodic_task_durations);
+            //JOptionPane.showMessageDialog(BatchTasksSetupFrame.this, );
+
+            setVisible(false); // Hide this frame
+            dispose(); // End this frame
 
         });
         panel.add(ok_button);
@@ -107,7 +109,6 @@ class BatchTasksSetupFrame extends JFrame {
         setTitle(Constants.BATCH_TASK_SETUP);
         setSize(620, max(number_of_aperiodic_tasks, number_of_periodic_tasks) * 50 + 200);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
     }
 }

@@ -1,7 +1,7 @@
 #include <Arduino_FreeRTOS.h>
 
 # define BTN_PIN 7
-# define DEBOUNCE_LIMIT 200
+
 # define STACK_SIZE 128
 
 # define NUMBER_OF_LEDS 5
@@ -18,8 +18,6 @@ StaticTask_t task3Handle;
 StackType_t task4Stack[STACK_SIZE];
 StaticTask_t task4Handle;
 
-
-volatile int last_interrupt_time = 0;
 int LED_PINS[] = {2, 3, 4, 5, 6};
 int periodic_task_durations[MAX_TASKS];
 int periodic_task_periods[MAX_TASKS];
@@ -34,42 +32,12 @@ void clearSerial(){
   }
 }
 
-void btn_isr() {
-  int interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > DEBOUNCE_LIMIT) {
-    a_duration_index++;
-    aperiodic_task_durations[a_duration_index] = 3;
-    createAperiodicTasks();
-  }
-  last_interrupt_time = interrupt_time;
-}
-
 void setup() {
 
   int server_period, server_capacity;
 
   // Start serial
   Serial.begin(9600);
-
-  // Server setup
-  Serial.println(F("Input your server period"));
-  while(1){
-    if (Serial.available() > 0) {
-      server_period = Serial.parseInt();
-      clearSerial();
-      break;
-    }
-  }
-  Serial.println(F("Input your server capacity"));
-  while(1){
-    if (Serial.available() > 0) {
-      server_capacity = Serial.parseInt();
-      clearSerial();
-      break;
-    }
-  }
-
-  setSporadicServerParams(server_period, server_capacity);
 
   for (int i = 0; i < MAX_TASKS; i++) { // Init the arrays
     periodic_task_durations[i] = i;
@@ -80,6 +48,29 @@ void setup() {
   for (int i = 0; i < NUMBER_OF_LEDS; i++) {
     pinMode(LED_PINS[i], OUTPUT);
   }
+  
+  // Server setup
+  //Serial.println(F("Input your server period"));
+  digitalWrite(2, HIGH);
+  while(1){
+    if (Serial.available() > 0) {
+      server_period = Serial.parseInt();
+      clearSerial();
+      break;
+    }
+  }
+
+  digitalWrite(4, HIGH);
+  //Serial.println(F("Input your server capacity"));
+  while(1){
+    if (Serial.available() > 0) {
+      server_capacity = Serial.parseInt();
+      clearSerial();
+      break;
+    }
+  }
+
+  setSporadicServerParams(server_period, server_capacity);
 
   attachInterrupt(digitalPinToInterrupt(BTN_PIN),btn_isr, RISING);
 
@@ -442,6 +433,13 @@ void stopPeriodicTask(int number_of_task_to_delete) {
       vTaskDelete( xTaskGetHandle( "task4" ));
       break;
   }
+}
+
+
+void btn_isr() {
+  a_duration_index++;
+  aperiodic_task_durations[a_duration_index] = 3;
+  createAperiodicTasks();
 }
 
 // ===================================== UTIL BLOCK END ===========================================

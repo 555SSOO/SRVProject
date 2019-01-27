@@ -7,8 +7,7 @@ import java.util.List;
 
 class OverviewFrame extends JFrame{
 
-    OverviewFrame(List<Integer> periodic_task_durations, List<Integer> periodic_task_periods,
-                  List<Integer> aperiodic_task_durations) {
+    OverviewFrame() {
 //        initUI(periodic_task_durations,periodic_task_periods,aperiodic_task_durations);
         initUI();
         this.setVisible(true);
@@ -79,8 +78,7 @@ class OverviewFrame extends JFrame{
         JButton batch_mode_button = new JButton(Constants.BATCH_MODE);
         batch_mode_button.setBounds(1300, 200, 200, 30);
         batch_mode_button.addActionListener(event -> {
-            setVisible(false); // Hide this frame
-            dispose(); // End this frame
+            new NumberOfTasksFrame();
         });
         panel.add(batch_mode_button);
 
