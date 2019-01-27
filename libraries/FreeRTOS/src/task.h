@@ -702,7 +702,9 @@ void vTaskAllocateMPURegions( TaskHandle_t xTask, const MemoryRegion_t * const p
  * \ingroup Tasks
  */
 void vTaskDelete( TaskHandle_t xTaskToDelete ) PRIVILEGED_FUNCTION;
-void vTaskDeletePeriodic( TaskHandle_t xTaskToDelete ) PRIVILEGED_FUNCTION;
+
+void vTaskDeletePeriodic( TaskHandle_t xTaskToDelete ) PRIVILEGED_FUNCTION; // SServer
+void setSporadicServerParams(int _uxServerRefreshRate, int _iServerCapacity); // SServer
 
 /*-----------------------------------------------------------
  * TASK CONTROL API

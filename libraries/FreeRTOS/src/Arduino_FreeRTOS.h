@@ -149,7 +149,7 @@ extern "C" {
 #endif
 
 #ifndef INCLUDE_xTaskGetHandle
-    #define INCLUDE_xTaskGetHandle 0
+    #define INCLUDE_xTaskGetHandle 1 // SServer
 #endif
 
 #ifndef INCLUDE_uxTaskGetStackHighWaterMark
@@ -996,6 +996,9 @@ typedef struct xSTATIC_LIST
  * are set.  Its contents are somewhat obfuscated in the hope users will
  * recognise that it would be unwise to make direct use of the structure members.
  */
+// SServer does this work?
+// struct TaskControlBlock_t;
+// typedef struct TaskControlBlock_t* TaskHandle_t;
 typedef struct xSTATIC_TCB
 {
     void                *pxDummy1;
@@ -1049,6 +1052,11 @@ typedef struct xSTATIC_TCB
     int                 iDummy26; // SServer isEnded
     int                 iDummy27; // SServer endTimeSection
     TickType_t          uxDummy28; // SServer ticksDone
+    TaskFunction_t      pxDummy29; // Task params for the context switch when initing this again
+    //char *              pcDummy30;
+    void *              pvDummy32;
+    //void *              pxDummy33;
+    //void *              pxDummy34;
 } StaticTask_t;
 
 /*

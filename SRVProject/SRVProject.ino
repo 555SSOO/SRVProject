@@ -1,6 +1,8 @@
 #include <Arduino_FreeRTOS.h>
 
-#define STACK_SIZE 128
+# define BTN_PIN 7
+# define DEBOUNCE_LIMIT 200
+# define STACK_SIZE 128
 
 # define NUMBER_OF_LEDS 5
 # define MAX_TASKS 5
@@ -16,16 +18,58 @@ StaticTask_t task3Handle;
 StackType_t task4Stack[STACK_SIZE];
 StaticTask_t task4Handle;
 
+
+volatile int last_interrupt_time = 0;
 int LED_PINS[] = {2, 3, 4, 5, 6};
 int periodic_task_durations[MAX_TASKS];
 int periodic_task_periods[MAX_TASKS];
 int aperiodic_task_durations[MAX_TASKS];
 int p_duration_index = 0, p_period_index = 0, a_duration_index = 0;
-int zero = 0, one = 1, two = 2;
+int zero = 0, one = 1, two = 2, three = 3, four = 4;
+int busy_queue[] = {0,0,0,0,0};
+
+void clearSerial(){
+  while(Serial.available() > 0) {
+    char t = Serial.read();
+  }
+}
+
+void btn_isr() {
+  int interrupt_time = millis();
+  if (interrupt_time - last_interrupt_time > DEBOUNCE_LIMIT) {
+    a_duration_index++;
+    aperiodic_task_durations[a_duration_index] = 3;
+    createAperiodicTasks();
+  }
+  last_interrupt_time = interrupt_time;
+}
+
 void setup() {
+
+  int server_period, server_capacity;
 
   // Start serial
   Serial.begin(9600);
+
+  // Server setup
+  Serial.println(F("Input your server period"));
+  while(1){
+    if (Serial.available() > 0) {
+      server_period = Serial.parseInt();
+      clearSerial();
+      break;
+    }
+  }
+  Serial.println(F("Input your server capacity"));
+  while(1){
+    if (Serial.available() > 0) {
+      server_capacity = Serial.parseInt();
+      clearSerial();
+      break;
+    }
+  }
+
+  setSporadicServerParams(server_period, server_capacity);
 
   for (int i = 0; i < MAX_TASKS; i++) { // Init the arrays
     periodic_task_durations[i] = i;
@@ -37,15 +81,19 @@ void setup() {
     pinMode(LED_PINS[i], OUTPUT);
   }
 
-  Serial.println(F("Input your command"));
+  attachInterrupt(digitalPinToInterrupt(BTN_PIN),btn_isr, RISING);
 
 }
 
 //example
 //b5,4;3,3;4,1;1,2;5,2;_3-1-3-3-0-
 //b5,10;5,15;_3-
+//a3
+
+// ===================================== PARSE BLOCK START ===========================================
+
 void parseBatchModeInput() {
-  char tmpchar = "";
+  char tmpchar = '[';
   int tmpint;
   char tmp[4];
   int i = 0;
@@ -84,25 +132,100 @@ void parseBatchModeInput() {
       a_duration_index++;
     }
   }
-
-  createBatchTasks();
+  clearSerial();
+  createPeriodicTasks();
+  createAperiodicTasks();
 
 }
 void parseStartPeriodicTaskInput() {
 
+  char tmpchar = '[';
+  int tmpint;
+  char tmp[4];
+  int i = 0;
+
+  // Read all the periodic task params
+  while (tmpchar != '\n') {
+    tmpchar = Serial.read();
+    if (tmpchar >= '0' && tmpchar <= '9') {
+      tmp[i] = tmpchar;
+      i++;
+    } else if (tmpchar == ',') {
+      tmp[i] = '\0';
+      i = 0;
+      sscanf(tmp, "%d", & tmpint);
+      periodic_task_durations[p_duration_index] = tmpint;
+      p_duration_index++;
+    } 
+  }
+  tmp[i] = '\0';
+  i = 0;
+  sscanf(tmp, "%d", & tmpint);
+  periodic_task_periods[p_period_index] = tmpint;
+  p_period_index++;
+
+  clearSerial();
+  createPeriodicTasks();
+
 }
 void parseStartAperiodicTaskInput() {
+  char tmpchar = '[';
+  int tmpint;
+  char tmp[4];
+  int i = 0;
+
+  // Read untill the end of input for all of the aperiodic tasks
+  while (tmpchar != '\n') {
+    tmpchar = Serial.read();
+    if (tmpchar >= '0' && tmpchar <= '9') { // Get the duration number
+      tmp[i] = tmpchar;
+      i++;
+    }  
+  }
+  tmp[i] = '\0';
+  sscanf(tmp, "%d", & tmpint);
+  aperiodic_task_durations[a_duration_index] = tmpint;
+  a_duration_index++;
+
+  clearSerial();
+  createAperiodicTasks();
 
 }
+
+// Read one number and stop that task
 void parseStopPeriodicTaskInput() {
-
+  int tmpint;
+  char tmp[4];
+  tmp[0] = Serial.read();
+  tmp[1] = '\0';
+  sscanf(tmp, "%d", & tmpint);
+  clearSerial();
+  stopPeriodicTask(tmpint);
 }
 
-void createBatchTasks() {
 
-  for (int i = 0; i < p_duration_index; i++) { // Loop and start each periodic task
-    switch (i) {
+// ===================================== PARSE BLOCK END ===========================================
+
+// ===================================== UTIL BLOCK START ===========================================
+
+
+void createPeriodicTasks() {
+
+  int number_of_started_tasks = 0;
+  int j = 0;
+
+  for(int i = 0; i < MAX_TASKS; i++){ // We count how many tasks are aready started
+    if(busy_queue[i] == 1) number_of_started_tasks++;
+  }
+
+  for (int i = number_of_started_tasks; i < p_duration_index; i++) { // Loop and start each new periodic task
+
+    for(j = 0; j < MAX_TASKS; j++){ // We find an empty queue spot
+      if(busy_queue[j] == 0) break;
+    }
+    switch (j) { // We make a task on that empty queue spot
     case 0:
+      busy_queue[0] = 1;
       xTaskCreateStatic(turnOnLED,
         "task0",
         STACK_SIZE,
@@ -118,6 +241,7 @@ void createBatchTasks() {
         0); // uxTicksDone
       break;
     case 1:
+      busy_queue[1] = 1;
       xTaskCreateStatic(turnOnLED,
         "task1",
         STACK_SIZE,
@@ -133,6 +257,7 @@ void createBatchTasks() {
         0); // uxTicksDone
       break;
     case 2:
+      busy_queue[2] = 1;
       xTaskCreateStatic(turnOnLED,
         "task2",
         STACK_SIZE,
@@ -147,39 +272,180 @@ void createBatchTasks() {
         0, // iEndTimeSection
         0); // uxTicksDone
       break;
-//    case 3:
-//      xTaskCreateStatic(turnOnLED,
-//        "task3",
-//        STACK_SIZE,
-//        (void * ) & testint,
-//        2,
-//        task3Stack,
-//        &task3Handle,
-//        periodic_task_periods[i], // deadline
-//        periodic_task_durations[i], // duration
-//        1, // isPeriodic
-//        0, // isEnded
-//        0, // iEndTimeSection
-//        0); // uxTicksDone
-//      break;
-//    case 4:
-//      xTaskCreateStatic(turnOnLED,
-//        "task4",
-//        STACK_SIZE,
-//        (void * ) & testint,
-//        2,
-//        task4Stack,
-//        &task4Handle,
-//        periodic_task_periods[i], // deadline
-//        periodic_task_durations[i], // duration
-//        1, // isPeriodic
-//        0, // isEnded
-//        0, // iEndTimeSection
-//        0); // uxTicksDone
-//      break;
+   case 3:
+     busy_queue[3] = 1;
+     xTaskCreateStatic(turnOnLED,
+       "task3",
+       STACK_SIZE,
+       (void * ) & three,
+       2,
+       task3Stack,
+       &task3Handle,
+       periodic_task_periods[i], // deadline
+       periodic_task_durations[i], // duration
+       1, // isPeriodic
+       0, // isEnded
+       0, // iEndTimeSection
+       0); // uxTicksDone
+     break;
+   case 4:
+     busy_queue[4] = 1;
+     xTaskCreateStatic(turnOnLED,
+       "task4",
+       STACK_SIZE,
+       (void * ) & four,
+       2,
+       task4Stack,
+       &task4Handle,
+       periodic_task_periods[i], // deadline
+       periodic_task_durations[i], // duration
+       1, // isPeriodic
+       0, // isEnded
+       0, // iEndTimeSection
+       0); // uxTicksDone
+     break;
     }
   }
 }
+
+void createAperiodicTasks(){
+
+  int number_of_started_tasks = 0;
+  int j = 0;
+
+  for(int i = 0; i < MAX_TASKS; i++){ // We count how many tasks are aready started
+    if(busy_queue[i] == 1) number_of_started_tasks++;
+  }
+
+  for (int i = number_of_started_tasks; i < p_duration_index + a_duration_index; i++) { // Loop and start each new aperiodic task
+
+    for(j = 0; j < MAX_TASKS; j++){ // We find an empty queue spot
+      if(busy_queue[j] == 0) break;
+    }
+    switch (j) { // We make a task on that empty queue spot
+    case 0:
+      busy_queue[0] = 1;
+      xTaskCreateStatic(turnOnLEDa,
+        "task0",
+        STACK_SIZE,
+        (void * ) & zero,
+        2,
+        task0Stack,
+        &task0Handle,
+        0, // deadline
+        aperiodic_task_durations[i], // duration
+        0, // isPeriodic
+        0, // isEnded
+        0, // iEndTimeSection
+        0); // uxTicksDone
+      break;
+    case 1:
+      busy_queue[1] = 1;
+      xTaskCreateStatic(turnOnLEDa,
+        "task1",
+        STACK_SIZE,
+        (void * ) & one,
+        2,
+        task1Stack,
+        &task1Handle,
+        0, // deadline
+        aperiodic_task_durations[i], // duration
+        0, // isPeriodic
+        0, // isEnded
+        0, // iEndTimeSection
+        0); // uxTicksDone
+      break;
+    case 2:
+      busy_queue[2] = 1;
+      xTaskCreateStatic(turnOnLEDa,
+        "task2",
+        STACK_SIZE,
+        (void * ) & two,
+        2,
+        task2Stack,
+        &task2Handle,
+        0, // deadline
+        aperiodic_task_durations[i], // duration
+        0, // isPeriodic
+        0, // isEnded
+        0, // iEndTimeSection
+        0); // uxTicksDone
+      break;
+   case 3:
+     busy_queue[3] = 1;
+     xTaskCreateStatic(turnOnLEDa,
+       "task3",
+       STACK_SIZE,
+       (void * ) & three,
+       2,
+       task3Stack,
+       &task3Handle,
+       0, // deadline
+       aperiodic_task_durations[i], // duration
+       0, // isPeriodic
+       0, // isEnded
+       0, // iEndTimeSection
+       0); // uxTicksDone
+     break;
+   case 4:
+     busy_queue[4] = 1;
+     xTaskCreateStatic(turnOnLEDa,
+       "task4",
+       STACK_SIZE,
+       (void * ) & four,
+       2,
+       task4Stack,
+       &task4Handle,
+       0, // deadline
+       aperiodic_task_durations[i], // duration
+       0, // isPeriodic
+       0, // isEnded
+       0, // iEndTimeSection
+       0); // uxTicksDone
+     break;
+    }
+  }
+
+}
+
+void stopPeriodicTask(int number_of_task_to_delete) {
+
+  switch(number_of_task_to_delete){
+    case 0:
+      busy_queue[0] = 0;
+      p_duration_index--;
+      p_period_index--;
+      vTaskDelete( xTaskGetHandle( "task0" ));
+      break;
+    case 1:
+      busy_queue[1] = 0;
+      p_duration_index--;
+      p_period_index--;
+      vTaskDelete( xTaskGetHandle( "task1" ));
+      break;
+    case 2:
+      busy_queue[2] = 0;
+      p_duration_index--;
+      p_period_index--;
+      vTaskDelete( xTaskGetHandle( "task2" ));
+      break;
+    case 3:
+      busy_queue[3] = 0;
+      p_duration_index--;
+      p_period_index--;
+      vTaskDelete( xTaskGetHandle( "task3" ));
+      break;
+    case 4:
+      busy_queue[4] = 0;
+      p_duration_index--;
+      p_period_index--;
+      vTaskDelete( xTaskGetHandle( "task4" ));
+      break;
+  }
+}
+
+// ===================================== UTIL BLOCK END ===========================================
+
 
 void turnOnLED(void * pvParameters) {
   int * ledPin = (int * ) pvParameters;
@@ -190,19 +456,31 @@ void turnOnLED(void * pvParameters) {
       digitalWrite(LED_PINS[i], LOW);
     }
   }
-  //Serial.println(*ledPin);
-  if(*ledPin == 0){
-      for(int j = 0; j< 500; j++){
-    Serial.println(j);}
-    }
-    else if (*ledPin == 1){
-        for(int j = 1500; j> 1000; j--){
-    Serial.println(j);}
-      }
+ 
+  while(1){}
 
-  
   vTaskDeletePeriodic(0);
 }
+
+void turnOnLEDa(void * pvParameters) {
+
+  int * task_number = (int * ) pvParameters;
+
+
+
+  int ledPin = 4;
+  for (int i = 0; i < NUMBER_OF_LEDS; i++) {
+    if (i == ledPin) {
+      digitalWrite(LED_PINS[i], HIGH);
+    } else {
+      digitalWrite(LED_PINS[i], LOW);
+    }
+  }
+  Serial.println("APERIODICCCCC");
+  busy_queue[*task_number] = 0;
+  vTaskDelete(0);
+}
+
 
 void loop() {
 

@@ -348,6 +348,14 @@ typedef struct TaskControlBlock_t
     int iIsEnded;
     int iEndTimeSection;
     TickType_t uxTicksDone;
+
+    TaskFunction_t pxTaskCode; // Task params for the context switch when initing this again
+    //char * pcName;
+    void * pvParameters;
+    //TaskHandle_t * pxCreatedTask;
+    //struct TaskControlBlock_t *pxOldTCB;
+
+
 } tskTCB;
 
 /* The old tskTCB name is maintained above then typedefed to the new TCB_t name
@@ -842,12 +850,12 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
 
 
 TickType_t uxServerRefreshRate = ((TickType_t)8); // SServer
-int iServerCapacity = 2;
+int iServerCapacity = 4;
 int capacityToRecover[MAX_TASKS];
 TickType_t timeToRecover[MAX_TASKS];
 
-void setSporadicServerParams(TickType_t _uxServerRefreshRate, int _iServerCapacity){
-    uxServerRefreshRate = _uxServerRefreshRate;
+void setSporadicServerParams(int _uxServerRefreshRate, int _iServerCapacity){
+    uxServerRefreshRate = (TickType_t)_uxServerRefreshRate;
     iServerCapacity = _iServerCapacity;
 }
 
@@ -974,6 +982,14 @@ UBaseType_t x;
     pxNewTCB->iIsEnded = iIsEnded; // SServer
     pxNewTCB->iEndTimeSection = iEndTimeSection; // SServer
     pxNewTCB->uxTicksDone = uxTicksDone; // SServer
+
+    // SServer
+    pxNewTCB->pxTaskCode = pxTaskCode; // Task params for the context switch when initing this again
+    //pxNewTCB->pcName = pcName;
+    pxNewTCB->pvParameters = pvParameters;
+    //pxNewTCB->pxCreatedTask = pxCreatedTask;
+    //pxNewTCB->pxOldTCB = pxNewTCB;
+
     
     #if ( configUSE_MUTEXES == 1 )
     {
@@ -2944,30 +2960,35 @@ BaseType_t xSwitchRequired = pdFALSE;
 void vTaskDeletePeriodic( TaskHandle_t xTaskToDelete ){
 
     TCB_t *pxTCB;
+    StackType_t *pxTopOfStack;
 
         taskENTER_CRITICAL();
         {
             pxTCB = prvGetTCBFromHandle( xTaskToDelete );
-            pxTCB->iIsEnded = 1;
+
+            pxTCB->iIsEnded = 1; // Set the flag to ended executing in this period
             pxTCB->iEndTimeSection = (int)(xTaskGetTickCount() / pxCurrentTCB->uxDeadline); // Set the section in which the task has ended
             pxTCB->uxTicksDone = 0; // Reset the execution time
+
+            #if( portSTACK_GROWTH < 0 )
+            {
+                pxTopOfStack = &( pxTCB->pxStack[ 128 - ( configSTACK_DEPTH_TYPE ) 1 ] );
+                pxTopOfStack = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
+            }
+            #else /* portSTACK_GROWTH */
+            {
+                pxTopOfStack = pxTCB->pxStack;
+                /* The other extreme of the stack space is required if stack checking is
+                performed. */
+                pxTCB->pxEndOfStack = pxTCB->pxStack + ( 128 - ( configSTACK_DEPTH_TYPE ) 1 );
+            }
+            #endif /* portSTACK_GROWTH */
+
+            pxTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTCB->pxTaskCode, pxTCB->pvParameters ); //Reset IP
+
+  
         }
         taskEXIT_CRITICAL();
-
-        /* Force a reschedule if it is the currently running task that has just
-        been deleted. */
-        if( xSchedulerRunning != pdFALSE )
-        {
-            if( pxTCB == pxCurrentTCB )
-            {
-                configASSERT( uxSchedulerSuspended == 0 );
-                portYIELD_WITHIN_API();
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
-        }
 
 }
 
@@ -3034,7 +3055,7 @@ void vTaskSwitchContext( void )
         
         // Check if we should recover server capacity
         for(int i = 0; i < MAX_TASKS; i++){ // Iterate over the arrays
-            if (xTaskGetTickCount == timeToRecover[i]){ // If it's the time to recover
+            if (((int)xTaskGetTickCount) == timeToRecover[i]){ // If it's the time to recover
                 iServerCapacity += capacityToRecover[i]; // Recover this amount
                 capacityToRecover[i] = 0; // Reset the arrays
                 timeToRecover[i] = 0;
@@ -3091,9 +3112,7 @@ void vTaskSwitchContext( void )
         //If the selected task is periodic
         if(pxCurrentTCB->iisPeriodic == 1){
             if(pxCurrentTCB->uxTicksDone + 1 == pxCurrentTCB->uxDuration){ // If this is the last tick
-                pxCurrentTCB->iIsEnded = 1; // Set the flag to ended executing in this period
-                pxCurrentTCB->iEndTimeSection = (int)(xTaskGetTickCount() / pxCurrentTCB->uxDeadline); // Set the section in which the task has ended
-                pxCurrentTCB->uxTicksDone = 0; // Reset the execution time
+                vTaskDeletePeriodic( pxCurrentTCB );
             }
             else{ // If it's not the last tick
                 pxCurrentTCB->iIsEnded = 0; // Set the flag to currently executing
