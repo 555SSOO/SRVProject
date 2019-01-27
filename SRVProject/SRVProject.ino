@@ -51,7 +51,7 @@ void setup() {
   
   // Server setup
   //Serial.println(F("Input your server period"));
-  digitalWrite(2, HIGH);
+  
   while(1){
     if (Serial.available() > 0) {
       server_period = Serial.parseInt();
@@ -60,7 +60,7 @@ void setup() {
     }
   }
 
-  digitalWrite(4, HIGH);
+  
   //Serial.println(F("Input your server capacity"));
   while(1){
     if (Serial.available() > 0) {
@@ -69,9 +69,9 @@ void setup() {
       break;
     }
   }
-
+  digitalWrite(3, HIGH);
   setSporadicServerParams(server_period, server_capacity);
-
+  digitalWrite(4, HIGH);
   attachInterrupt(digitalPinToInterrupt(BTN_PIN),btn_isr, RISING);
 
 }
@@ -483,6 +483,7 @@ void turnOnLEDa(void * pvParameters) {
 void loop() {
 
   //Serial.println("In idle");
+  digitalWrite(2, HIGH);
 
   if (Serial.available() > 0) {
     // If we are sent batch tasks

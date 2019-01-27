@@ -35,7 +35,7 @@ public class MessageFormator {
     public static void sendServerParams(int server_period, int server_capacity){
         try {
             ArduinoCommunication.writeToSerial(String.valueOf(server_period));
-            Thread.sleep(200);
+            Thread.sleep(3000);
             ArduinoCommunication.writeToSerial(String.valueOf(server_capacity));
         } catch (SerialPortException | InterruptedException e) {
             e.printStackTrace();
