@@ -29,4 +29,5 @@ public class Constants {
     public static final String TASK_NOT_STARTED = "That task hasn't been started";
     public static final String TASK_STOPPED = "Task stopped";
     public static final String MAX_NUMBER_OF_TASKS_ERROR = "Max number of tasks is 5";
+    public static final String TASK_ADDED = "Task added";
 }

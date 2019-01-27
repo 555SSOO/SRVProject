@@ -68,7 +68,7 @@ class OverviewFrame extends JFrame{
             if(task_array.contains(0)){
                 sendStartPeriodicTaskMessage((Integer) periodic_task_period_selector.getValue(), (Integer) periodic_task_duration_selector.getValue());
                 task_array.set(getIndex(0, task_array), 1);
-                JOptionPane.showMessageDialog(OverviewFrame.this, Constants.TASK_STOPPED);
+                JOptionPane.showMessageDialog(OverviewFrame.this, Constants.TASK_ADDED);
             }
             else{
                 JOptionPane.showMessageDialog(OverviewFrame.this, Constants.MAX_NUMBER_OF_TASKS_ERROR);
@@ -83,7 +83,7 @@ class OverviewFrame extends JFrame{
             if(task_array.contains(0)){
                 sendStartAperiodicTaskMessage((Integer) aperiodic_task_duration_selector.getValue());
                 //task_array.set(getIndex(0, task_array), 1);
-                JOptionPane.showMessageDialog(OverviewFrame.this, Constants.TASK_STOPPED);
+                JOptionPane.showMessageDialog(OverviewFrame.this, Constants.TASK_ADDED);
             }
             else{
                 JOptionPane.showMessageDialog(OverviewFrame.this, Constants.MAX_NUMBER_OF_TASKS_ERROR);

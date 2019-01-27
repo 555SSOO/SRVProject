@@ -23,7 +23,7 @@ public class MessageFormator {
         // a ';' separator between periodic tasks, a '_' separator between periodic and aperiodic tasks,
         // and a '-' separator between aperiodic tasks
         // For example b5,4;3,3;4,1;1,2;5,2;_3-1-3-3-0-
-
+        System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
         } catch (SerialPortException e) {
@@ -45,6 +45,7 @@ public class MessageFormator {
         StringBuilder message = new StringBuilder();
         message.append("s");
         message.append(number_of_task_to_stop);
+        System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
         } catch (SerialPortException e) {
@@ -58,6 +59,7 @@ public class MessageFormator {
         message.append(period);
         message.append(",");
         message.append(duration);
+        System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
         } catch (SerialPortException e) {
@@ -69,6 +71,7 @@ public class MessageFormator {
         StringBuilder message = new StringBuilder();
         message.append("a");
         message.append(duration);
+        System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
         } catch (SerialPortException e) {
