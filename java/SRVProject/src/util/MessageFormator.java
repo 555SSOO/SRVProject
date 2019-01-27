@@ -22,7 +22,8 @@ public class MessageFormator {
         // The message will have b char to indicate batch mode, a ',' separator between periodic task durations and periods,
         // a ';' separator between periodic tasks, a '_' separator between periodic and aperiodic tasks,
         // and a '-' separator between aperiodic tasks
-        // For example b5,4;3,3;4,1;1,2;5,2;_3-1-3-3-0-
+        // For example b5,4;3,3;4,1;1,2;5,2;_3-1-3-3-0-~
+        message.append("~");
         System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
@@ -59,7 +60,7 @@ public class MessageFormator {
         message.append(period);
         message.append(",");
         message.append(duration);
-        message.append("\n");
+        message.append("~");
         System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());
@@ -72,6 +73,7 @@ public class MessageFormator {
         StringBuilder message = new StringBuilder();
         message.append("a");
         message.append(duration);
+        message.append("~");
         System.out.println(message);
         try {
             ArduinoCommunication.writeToSerial(message.toString());

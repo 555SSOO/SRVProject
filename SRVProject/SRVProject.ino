@@ -76,9 +76,9 @@ void setup() {
 }
 
 //example
-//b5,4;3,3;4,1;1,2;5,2;_3-1-3-3-0-
-//b5,10;5,15;_3-
-//a3
+//b5,4;3,3;4,1;1,2;5,2;_3-1-3-3-0-~
+//b5,10;5,15;_3-~
+//a3~
 
 // ===================================== PARSE BLOCK START ===========================================
 
@@ -109,7 +109,7 @@ void parseBatchModeInput() {
     }
   }
   // Read untill the end of input for all of the aperiodic tasks
-  while (tmpchar != '\n') {
+  while (tmpchar != '~') {
     tmpchar = Serial.read();
     if (tmpchar >= '0' && tmpchar <= '9') {
       tmp[i] = tmpchar;
@@ -135,7 +135,7 @@ void parseStartPeriodicTaskInput() {
   int i = 0;
 
   // Read all the periodic task params
-  while (tmpchar != '\n') {
+  while (tmpchar != '~') {
     tmpchar = Serial.read();
     if (tmpchar >= '0' && tmpchar <= '9') {
       tmp[i] = tmpchar;
@@ -165,7 +165,7 @@ void parseStartAperiodicTaskInput() {
   int i = 0;
 
   // Read untill the end of input for all of the aperiodic tasks
-  while (tmpchar != '\n') {
+  while (tmpchar != '~') {
     tmpchar = Serial.read();
     if (tmpchar >= '0' && tmpchar <= '9') { // Get the duration number
       tmp[i] = tmpchar;
@@ -203,7 +203,7 @@ void createPeriodicTasks() {
 
   int number_of_started_tasks = 0;
   int j = 0;
-
+digitalWrite(3, HIGH);
   for(int i = 0; i < MAX_TASKS; i++){ // We count how many tasks are aready started
     if(busy_queue[i] == 1) number_of_started_tasks++;
   }
@@ -480,7 +480,7 @@ void turnOnLEDa(void * pvParameters) {
 
 
 void loop() {
-
+digitalWrite(4, HIGH);
   //Serial.println("In idle");
   if (Serial.available() > 0) {
     // If we are sent batch tasks
