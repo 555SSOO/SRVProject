@@ -24,4 +24,7 @@ public class Constants {
     public static final String INPUT_SERVER_PERIOD = "Input your server period";
     public static final String INPUT_SERVER_CAPACITY = "Input your server capacity";
     public static final String TOO_MANY_TASKS = "Too many tasks, maximum is 5";
+    public static final String TASK_NOT_STARTED = "That task hasn't been started";
+    public static final String TASK_STOPPED = "Task stopped";
+    public static final String MAX_NUMBER_OF_TASKS_ERROR = "Max number of tasks is 5";
 }

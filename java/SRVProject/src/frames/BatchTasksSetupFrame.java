@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.Integer.max;
+import static util.ArrayUtil.getIndex;
 import static util.MessageFormator.sendBatchTaskMessage;
 
 class BatchTasksSetupFrame extends JFrame {
@@ -95,6 +96,10 @@ class BatchTasksSetupFrame extends JFrame {
 
 
             sendBatchTaskMessage(periodic_task_durations,periodic_task_periods,aperiodic_task_durations);
+
+            for(int i = 0; i <  periodic_task_durations.size(); i++){
+                OverviewFrame.task_array.set(getIndex(0,OverviewFrame.task_array), 1);
+            }
 
             //JOptionPane.showMessageDialog(BatchTasksSetupFrame.this, );
 

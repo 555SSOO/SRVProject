@@ -36,7 +36,6 @@ public class ArduinoCommunication {
     }
 
     public static void writeToSerial(String message) throws SerialPortException {
-        System.out.println(message);
         serialPort.writeString(message);
     }
 

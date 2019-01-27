@@ -41,6 +41,41 @@ public class MessageFormator {
             e.printStackTrace();
         }
     }
+    public static void sendStopTaskMessage(int number_of_task_to_stop){
+        StringBuilder message = new StringBuilder();
+        message.append("s");
+        message.append(number_of_task_to_stop);
+        try {
+            ArduinoCommunication.writeToSerial(message.toString());
+        } catch (SerialPortException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void sendStartPeriodicTaskMessage(int period, int duration){
+        StringBuilder message = new StringBuilder();
+        message.append("p");
+        message.append(period);
+        message.append(",");
+        message.append(duration);
+        try {
+            ArduinoCommunication.writeToSerial(message.toString());
+        } catch (SerialPortException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void sendStartAperiodicTaskMessage(int duration){
+        StringBuilder message = new StringBuilder();
+        message.append("a");
+        message.append(duration);
+        try {
+            ArduinoCommunication.writeToSerial(message.toString());
+        } catch (SerialPortException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 }

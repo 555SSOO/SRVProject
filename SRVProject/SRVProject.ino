@@ -474,7 +474,7 @@ void turnOnLEDa(void * pvParameters) {
       digitalWrite(LED_PINS[i], LOW);
     }
   }
-  Serial.println("APERIODICCCCC");
+  //Serial.println("APERIODICCCCC");
   busy_queue[*task_number] = 0;
   vTaskDelete(0);
 }
@@ -482,7 +482,7 @@ void turnOnLEDa(void * pvParameters) {
 
 void loop() {
 
-  Serial.println("In idle");
+  //Serial.println("In idle");
 
   if (Serial.available() > 0) {
     // If we are sent batch tasks
